@@ -32,4 +32,4 @@ Repositório com os exemplos do tutorial de MonoGame publicado no [Medium](https
 - O carro do jogador possuíra uma resistência de 100% e uma velocidade de 110km/h.
 - Os buracos causaram um dano aleatório de 1% á 10%.
 - A cada buraco desviado o jogador ganhará desconto no IPVA.
-- O carro se movimenta para todas as direções, porem não pode ultrapassar a metade da tela do dispositivo quando for para a frente.
+- :new:O carro se movimenta para todas as direções, porem não pode ultrapassar a metade da tela do dispositivo quando for para a frente.
