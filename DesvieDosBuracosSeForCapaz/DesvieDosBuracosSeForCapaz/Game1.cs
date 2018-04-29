@@ -2,6 +2,8 @@ using DesvieDosBuracosSeForCapaz.GameObjects;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using Microsoft.Xna.Framework.Input.Touch;
+using System.Collections.Generic;
 
 namespace DesvieDosBuracosSeForCapaz
 {
@@ -12,7 +14,7 @@ namespace DesvieDosBuracosSeForCapaz
 
         // Objetos do jogo.
         Carro _carro;
-        Buraco _buraco;
+        List<Buraco> _buracos;
 
         public Game1()
         {
@@ -20,16 +22,18 @@ namespace DesvieDosBuracosSeForCapaz
             Content.RootDirectory = "Content";
 
             _graphics.IsFullScreen = true;
-            _graphics.PreferredBackBufferWidth = 800;
-            _graphics.PreferredBackBufferHeight = 480;
-            _graphics.SupportedOrientations = DisplayOrientation.LandscapeLeft | DisplayOrientation.LandscapeRight;
         }
 
         protected override void Initialize()
         {
-            // Instância os objetos do jogo definindo uma posição inicial.
-            _carro = new Carro { Posicao = Vector2.Zero };
-            _buraco = new Buraco { Posicao = new Vector2(0, 700) };
+            // Instância os objetos do jogo.
+            _carro = new Carro();
+            _buracos = new List<Buraco>();
+
+            // Cria os buracos com uma velocidade para o eixo X de Zero
+            // e eixo Y de 11 adicionando o mesmo na lista.
+            for (int i = 0; i < 5; i++)
+                _buracos.Add(new Buraco { Velocidade = new Vector2(0, 11) });
 
             base.Initialize();
         }
@@ -41,7 +45,15 @@ namespace DesvieDosBuracosSeForCapaz
             // Carrega os sprites/imagens.
             // Utilizando o método Load herdado da classe GameObject2D.
             _carro.Load(Content, "Sprite/carro");
-            _buraco.Load(Content, "Sprite/buraco");
+
+            foreach (var buraco in _buracos)
+                buraco.Load(Content, "Sprite/buraco");
+
+            // Seta a posição inicial dos objetos do jogo.
+            foreach (var buraco in _buracos)
+                buraco.SetaPosicaoAleatoria(ref _graphics);
+
+            _carro.SetaPosicaoInicial(ref _graphics);
         }
 
         protected override void Update(GameTime gameTime)
@@ -49,7 +61,21 @@ namespace DesvieDosBuracosSeForCapaz
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 Exit();
 
-            // Por enquanto o jogo não realiza nenhuma ação.
+            #region Movimenta os objetos do jogo.
+
+            TouchCollection touchLocations = TouchPanel.GetState();
+
+            _carro.Mover(ref touchLocations, ref _graphics);
+
+            foreach (var buraco in _buracos)
+            {
+                buraco.Posicao.Y += buraco.Velocidade.Y;
+
+                if (buraco.Posicao.Y > _graphics.GraphicsDevice.DisplayMode.Height)
+                    buraco.SetaPosicaoAleatoria(ref _graphics);
+            }
+
+            #endregion
 
             base.Update(gameTime);
         }
@@ -62,8 +88,10 @@ namespace DesvieDosBuracosSeForCapaz
 
             // Desenha os objetos do jogo;
             // Utilizando o método Draw herdado da classe GameObject2D.
+            foreach (var buraco in _buracos)
+                buraco.Draw(_spriteBatch);
+
             _carro.Draw(_spriteBatch);
-            _buraco.Draw(_spriteBatch);
 
             _spriteBatch.End(); // Chamada obrigatória após de desenhar os objetos
 

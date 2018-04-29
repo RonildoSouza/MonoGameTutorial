@@ -16,6 +16,17 @@ namespace DesvieDosBuracosSeForCapaz.GameObjects
         public Vector2 Velocidade;
         public Vector2 Origem = Vector2.Zero;
 
+        public Rectangle Limites
+        {
+            get
+            {
+                if (_textura != null && Posicao != null)
+                    return new Rectangle((int)Posicao.X, (int)Posicao.Y, _textura.Width, _textura.Height);
+
+                return Rectangle.Empty;
+            }
+        }
+
         public virtual void Load(ContentManager content, string assetName)
         {
             // Carrega a sprite/imagem é atribui o resultado á variavel _texture
