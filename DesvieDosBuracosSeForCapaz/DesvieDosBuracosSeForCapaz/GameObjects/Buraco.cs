@@ -8,6 +8,11 @@ namespace DesvieDosBuracosSeForCapaz.GameObjects
         public int Dano { get; set; }
 
         /// <summary>
+        /// Propriedade para garantir o registro de apenas uma colisão
+        /// </summary>
+        public bool JaColidiu { get; set; }
+
+        /// <summary>
         /// Define uma posição aleatória inicial.
         /// </summary>
         /// <param name="graphics"></param>
@@ -22,6 +27,17 @@ namespace DesvieDosBuracosSeForCapaz.GameObjects
             var posY = random.Next((int)(graphics.GraphicsDevice.DisplayMode.Height * -0.6), 0);
 
             Posicao = new Vector2(posX, posY);
+        }
+
+        /// <summary>
+        /// Verifica se os limites do buraco se intecepta com os limites do carro
+        /// e se o carro já caiu no buraco
+        /// </summary>
+        /// <param name="carro">Objeto carro para validar colisão</param>
+        /// <returns>Boolean</returns>
+        public bool ColidiuCom(ref Carro carro)
+        {
+            return Limites.Intersects(carro.Limites) && !JaColidiu;
         }
     }
 }
