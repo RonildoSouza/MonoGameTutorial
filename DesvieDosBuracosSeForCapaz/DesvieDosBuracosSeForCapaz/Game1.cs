@@ -16,6 +16,7 @@ namespace DesvieDosBuracosSeForCapaz
         // Objetos do jogo.
         Carro _carro;
         List<Buraco> _buracos;
+        Cenario _cenario;
         SpriteFont _fonte;
 
         int _descontoIPVA = 0;
@@ -30,9 +31,12 @@ namespace DesvieDosBuracosSeForCapaz
 
         protected override void Initialize()
         {
+            Vector2 velocidade = new Vector2(0, 11);
+
             // Instância os objetos do jogo.
             _carro = new Carro { Resistencia = 100 };
             _buracos = new List<Buraco>();
+            _cenario = new Cenario(_graphics, velocidade);
 
             // Cria os buracos com uma velocidade para o eixo X de Zero
             // e eixo Y de 11 adicionando o mesmo na lista.
@@ -40,7 +44,7 @@ namespace DesvieDosBuracosSeForCapaz
             {
                 _buracos.Add(new Buraco
                 {
-                    Velocidade = new Vector2(0, 11),
+                    Velocidade = velocidade,
                     Dano = GetDanoAleatorio()
                 });
             }
@@ -52,6 +56,10 @@ namespace DesvieDosBuracosSeForCapaz
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
 
+            // Carrega o cenário
+            _cenario.Load(Content, "Sprite/cenario");
+
+            // Carrega o arquivo de fonte.
             _fonte = Content.Load<SpriteFont>("fonte");
 
             // Carrega os sprites/imagens.
@@ -62,16 +70,21 @@ namespace DesvieDosBuracosSeForCapaz
                 buraco.Load(Content, "Sprite/buraco");
 
             // Seta a posição inicial dos objetos do jogo.
-            //foreach (var buraco in _buracos)
-            //    buraco.SetaPosicaoAleatoria(ref _graphics);
-
-            for (int i = 0; i < _buracos.Count; i++)
+            int i = 0;
+            do
             {
-                do
+                // Posição buraco atual
+                _buracos[i].SetaPosicaoAleatoria(ref _graphics);
+
+                if (i > 0 && _buracos[i].Limites.Intersects(_buracos[i - 1].Limites))
                 {
+                    i--;
+                    // Posição buraco anterior
                     _buracos[i].SetaPosicaoAleatoria(ref _graphics);
-                } while (i > 0 && _buracos[i].Limites.Intersects(_buracos[i - 1].Limites));
-            }
+                }
+
+                i++;
+            } while (i < _buracos.Count);
 
             _carro.SetaPosicaoInicial(ref _graphics);
         }
@@ -91,13 +104,19 @@ namespace DesvieDosBuracosSeForCapaz
             {
                 buraco.Posicao.Y += buraco.Velocidade.Y;
 
+                // Ações realizadas quando o buraco sai da tela.
                 if (buraco.Posicao.Y > _graphics.GraphicsDevice.DisplayMode.Height)
                 {
+                    // Não colidiu com o carro?
+                    if (!buraco.JaColidiu)
+                        _descontoIPVA += 50;
+
                     buraco.SetaPosicaoAleatoria(ref _graphics);
-                    buraco.JaColidiu = false;
                     buraco.Dano = GetDanoAleatorio();
+                    buraco.JaColidiu = false;
                 }
 
+                // Ocorreu uma colisão?
                 if (buraco.ColidiuCom(ref _carro))
                 {
                     buraco.JaColidiu = true;
@@ -107,6 +126,9 @@ namespace DesvieDosBuracosSeForCapaz
 
             #endregion
 
+            // Atualiza a posição Y do cenário.
+            _cenario.Update();
+
             base.Update(gameTime);
         }
 
@@ -114,38 +136,29 @@ namespace DesvieDosBuracosSeForCapaz
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            string debug = "";
-            debug += $"Carro {_carro.Limites}\n";
-            debug += $"Carro Resitencia {_carro.Resistencia}\n\n";
-            debug += $"Buraco 0 {_buracos[0].Limites}\n";
-            debug += $"Buraco 0 Dano {_buracos[0].Dano}\n";
-            debug += $"Buraco 1 {_buracos[1].Limites}\n";
-            debug += $"Buraco 2 {_buracos[2].Limites}\n";
-            debug += $"Colidiu 0 {_buracos[0].ColidiuCom(ref _carro)}\n";
-            debug += $"Colidiu 1 {_buracos[1].ColidiuCom(ref _carro)}\n";
-            debug += $"Colidiu 2 {_buracos[2].ColidiuCom(ref _carro)}\n";
-
             _spriteBatch.Begin(); // Chamada obrigatória antes de desenhar os objetos
 
-            _spriteBatch.DrawString(_fonte, debug, Vector2.One, Color.Black);
-
-            _spriteBatch.DrawString(_fonte, _descontoIPVA.ToString(),
-                new Vector2(0, 500),
-                Color.Black);
+            // Desenha o cenário
+            _cenario.Draw(_spriteBatch);
 
             // Desenha os objetos do jogo;
             // Utilizando o método Draw herdado da classe GameObject2D.
-            for (int i = 0; i < _buracos.Count; i++)
-            {
-                var buraco = _buracos[i];
-
+            foreach (var buraco in _buracos)
                 buraco.Draw(_spriteBatch);
-                _spriteBatch.DrawString(_fonte, i.ToString(), buraco.Posicao, Color.White);
-            }
 
             _carro.Draw(_spriteBatch);
 
-            _spriteBatch.End(); // Chamada obrigatória após de desenhar os objetos
+            #region Desenha textos de desconto IPVA e resistência do carro
+
+            _spriteBatch.DrawString(_fonte, $"RES. CARRO.: {_carro.Resistencia}",
+                new Vector2(50, 10), Color.White);
+
+            _spriteBatch.DrawString(_fonte, $"DESC. IPVA.: {_descontoIPVA:c}",
+                new Vector2(50, 75), Color.White);
+
+            #endregion 
+
+            _spriteBatch.End(); // Chamada obrigatória após desenhar os objetos
 
             base.Draw(gameTime);
         }
