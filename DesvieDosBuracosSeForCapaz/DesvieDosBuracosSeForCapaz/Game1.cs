@@ -1,8 +1,10 @@
 using DesvieDosBuracosSeForCapaz.GameObjects;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Input.Touch;
+using Microsoft.Xna.Framework.Media;
 using System;
 using System.Collections.Generic;
 
@@ -20,6 +22,10 @@ namespace DesvieDosBuracosSeForCapaz
         SpriteFont _fonte;
 
         int _descontoIPVA = 0;
+
+        // Manipula os conteudos de sons
+        Song _musica;
+        SoundEffect _somColisao;
 
         public Game1()
         {
@@ -55,6 +61,14 @@ namespace DesvieDosBuracosSeForCapaz
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
+
+            // Carrega os sons
+            _musica = Content.Load<Song>("Sons/Fringe");
+            _somColisao = Content.Load<SoundEffect>("Sons/colisao");
+
+            // Toca a música repetidamente
+            MediaPlayer.IsRepeating = true;
+            MediaPlayer.Play(_musica);
 
             // Carrega o cenário
             _cenario.Load(Content, "Sprite/cenario");
@@ -119,6 +133,7 @@ namespace DesvieDosBuracosSeForCapaz
                 // Ocorreu uma colisão?
                 if (buraco.ColidiuCom(ref _carro))
                 {
+                    _somColisao.Play();
                     buraco.JaColidiu = true;
                     _carro.Resistencia -= buraco.Dano;
                 }
