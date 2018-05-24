@@ -20,6 +20,10 @@ namespace DesvieDosBuracosSeForCapaz
         List<Buraco> _buracos;
         Cenario _cenario;
         SpriteFont _fonte;
+        SpriteFont _fonteGameOver;
+        BotaoStart _btnStart;
+
+        bool _start = false;
 
         int _descontoIPVA = 0;
 
@@ -43,6 +47,7 @@ namespace DesvieDosBuracosSeForCapaz
             _carro = new Carro { Resistencia = 100 };
             _buracos = new List<Buraco>();
             _cenario = new Cenario(_graphics, velocidade);
+            _btnStart = new BotaoStart();
 
             // Cria os buracos com uma velocidade para o eixo X de Zero
             // e eixo Y de 11 adicionando o mesmo na lista.
@@ -75,6 +80,7 @@ namespace DesvieDosBuracosSeForCapaz
 
             // Carrega o arquivo de fonte.
             _fonte = Content.Load<SpriteFont>("fonte");
+            _fonteGameOver = Content.Load<SpriteFont>("fonteGameOver");
 
             // Carrega os sprites/imagens.
             // Utilizando o método Load herdado da classe GameObject2D.
@@ -82,6 +88,8 @@ namespace DesvieDosBuracosSeForCapaz
 
             foreach (var buraco in _buracos)
                 buraco.Load(Content, "Sprite/buraco");
+
+            _btnStart.Load(Content, "Sprite/btn_start");
 
             // Seta a posição inicial dos objetos do jogo.
             int i = 0;
@@ -101,6 +109,8 @@ namespace DesvieDosBuracosSeForCapaz
             } while (i < _buracos.Count);
 
             _carro.SetaPosicaoInicial(ref _graphics);
+
+            _btnStart.SetaPosicao(ref _graphics);
         }
 
         protected override void Update(GameTime gameTime)
@@ -108,41 +118,53 @@ namespace DesvieDosBuracosSeForCapaz
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 Exit();
 
-            #region Movimenta os objetos do jogo.
-
             TouchCollection touchLocations = TouchPanel.GetState();
 
-            _carro.Mover(ref touchLocations, ref _graphics);
+            if (_btnStart.Start(ref touchLocations) && _carro.Resistencia == 100)
+                _start = true;
 
-            foreach (var buraco in _buracos)
+            if (_start)
             {
-                buraco.Posicao.Y += buraco.Velocidade.Y;
+                #region Movimenta os objetos do jogo.
 
-                // Ações realizadas quando o buraco sai da tela.
-                if (buraco.Posicao.Y > _graphics.GraphicsDevice.DisplayMode.Height)
+                _carro.Mover(ref touchLocations, ref _graphics);
+
+                foreach (var buraco in _buracos)
                 {
-                    // Não colidiu com o carro?
-                    if (!buraco.JaColidiu)
-                        _descontoIPVA += 50;
+                    buraco.Posicao.Y += buraco.Velocidade.Y;
 
-                    buraco.SetaPosicaoAleatoria(ref _graphics);
-                    buraco.Dano = GetDanoAleatorio();
-                    buraco.JaColidiu = false;
+                    // Ações realizadas quando o buraco sai da tela.
+                    if (buraco.Posicao.Y > _graphics.GraphicsDevice.DisplayMode.Height)
+                    {
+                        // Não colidiu com o carro?
+                        if (!buraco.JaColidiu)
+                            _descontoIPVA += 50;
+
+                        buraco.SetaPosicaoAleatoria(ref _graphics);
+                        buraco.Dano = GetDanoAleatorio();
+                        buraco.JaColidiu = false;
+                    }
+
+                    // Ocorreu uma colisão?
+                    if (buraco.ColidiuCom(ref _carro))
+                    {
+                        _somColisao.Play();
+                        buraco.JaColidiu = true;
+                        _carro.Resistencia -= buraco.Dano;
+                    }
+
+                    if (_carro.Resistencia <= 0)
+                    {
+                        _carro.Resistencia = 0;
+                        _start = false;
+                    }
                 }
 
-                // Ocorreu uma colisão?
-                if (buraco.ColidiuCom(ref _carro))
-                {
-                    _somColisao.Play();
-                    buraco.JaColidiu = true;
-                    _carro.Resistencia -= buraco.Dano;
-                }
+                #endregion
+
+                // Atualiza a posição Y do cenário.
+                _cenario.Update();
             }
-
-            #endregion
-
-            // Atualiza a posição Y do cenário.
-            _cenario.Update();
 
             base.Update(gameTime);
         }
@@ -156,22 +178,37 @@ namespace DesvieDosBuracosSeForCapaz
             // Desenha o cenário
             _cenario.Draw(_spriteBatch);
 
-            // Desenha os objetos do jogo;
-            // Utilizando o método Draw herdado da classe GameObject2D.
-            foreach (var buraco in _buracos)
-                buraco.Draw(_spriteBatch);
+            if (!_start && _carro.Resistencia == 100)
+                _btnStart.Draw(_spriteBatch);
 
-            _carro.Draw(_spriteBatch);
+            if (_start)
+            {
+                // Desenha os objetos do jogo;
+                // Utilizando o método Draw herdado da classe GameObject2D.
+                foreach (var buraco in _buracos)
+                    buraco.Draw(_spriteBatch);
+
+                _carro.Draw(_spriteBatch);
+            }
+
+            if (!_start && _carro.Resistencia <= 0)
+            {
+                var gameOver = "GAME\nOVER";
+                var tamanhoString = _fonteGameOver.MeasureString(gameOver);
+
+                _spriteBatch.DrawString(_fonteGameOver, gameOver,
+                    new Vector2((_graphics.GraphicsDevice.DisplayMode.Width - tamanhoString.X) / 2,
+                    (_graphics.GraphicsDevice.DisplayMode.Height - tamanhoString.Y) / 2),
+                    Color.DarkRed);
+            }
 
             #region Desenha textos de desconto IPVA e resistência do carro
 
-            _spriteBatch.DrawString(_fonte, $"RES. CARRO.: {_carro.Resistencia}",
-                new Vector2(50, 10), Color.White);
+            _spriteBatch.DrawString(_fonte, $"RES. CARRO.: {_carro.Resistencia}", new Vector2(50, 10), Color.White);
 
-            _spriteBatch.DrawString(_fonte, $"DESC. IPVA.: {_descontoIPVA:c}",
-                new Vector2(50, 75), Color.White);
+            _spriteBatch.DrawString(_fonte, $"DESC. IPVA.: {_descontoIPVA:c}", new Vector2(50, 75), Color.White);
 
-            #endregion 
+            #endregion
 
             _spriteBatch.End(); // Chamada obrigatória após desenhar os objetos
 

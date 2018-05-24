@@ -5,7 +5,7 @@ using Android.Views;
 
 namespace DesvieDosBuracosSeForCapaz
 {
-    [Activity(Label = "DesvieDosBuracosSeForCapaz"
+    [Activity(Label = "Desvie dos Buracos Se For Capaz"
         , MainLauncher = true
         , Icon = "@drawable/icon"
         , Theme = "@style/Theme.Splash"
