@@ -35,3 +35,9 @@ Repositório com os exemplos do tutorial de MonoGame publicado no [Medium](https
 - Para movimentar o carro o usuário deverá manter o dedo pressionado sobre o mesmo e arrastar para a direção desejada.
 - O carro se movimenta para todas as direções, porem não pode ultrapassar 80% da tela do dispositivo quando for para a frente.
 - Ao "cair" em um buraco o dano deverá ser causado apenas no primeiro
+
+-----
+
+<p align="center">
+  <img src="./gif/game.gif">
+</p>
